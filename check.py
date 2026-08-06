@@ -7,7 +7,7 @@ def mac_operation_flow( pattern, filter_matrix):
         total_score = 0
         rows = len(pattern)
         cols= len(pattern)
-        """total_score=[[0 for _ in range(rows)] for _ in range(cols)]"""
+        """total_score=[[0 for _ in range(cols)] for _ in range(rows)]"""
         for r in range(rows):
             for c in range(cols):
                 total_score += pattern[r][c] * filter_matrix[r][c]
