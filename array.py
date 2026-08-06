@@ -73,13 +73,13 @@ class Matrix:
             print("오류 : 행렬 데이터가 없습니다. ")
             return None
 
-        
+        #제너레이터를 쓰면 0부터 더해서 초기화 필요 X
         total_sum = sum(
             self.data[r][c] * pathern.data[r][c]
             for r in range(self.n)
             for c in range(self.n)
         )
-
+        total_sum= sum(self.data[r][c] * pathern.data[r][c]for r in range(self.n)for c in range(self.n))
         total_sum = 0.0
         """
         for r in range(self.n):
@@ -90,6 +90,7 @@ class Matrix:
 
         return float(total_sum)
 
+    
 
 def mode1():
     print("\n ------------[모드 1] 사용자 직접 입력 -----------------")

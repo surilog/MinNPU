@@ -23,7 +23,7 @@ li2 = []
     li2.append(row)"""
 
 # 2차원 리스트 컴프리헨션
-li2 = [[1 for _ in range(5)] for _ in range(5)]
+li2 = [[0 for _ in range(5)] for _ in range(5)]
 print("리스트 컴프리헨션 사용: ",li2)
 
 
@@ -37,3 +37,6 @@ N=3
 array = [[0 for _ in range(N)]for _ in range(N)]
 
 print(array)
+
+
+#제너레이터 표현식
