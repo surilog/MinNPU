@@ -19,7 +19,7 @@ def only_normal(label_raw: str) -> str:
 class Matrix:
     def __init__(self, size : int, data:list=None):
         self.n=size
-        self.data = []
+        self.data = data if data is not None else []
           # 이중 for문(리스트 컴프리헨션)을 이용한 N * N 배열 초기화a
         """ self.matrix = []
         for _ in range(n):
@@ -149,7 +149,7 @@ class Mode_2():
 
     def N_from_patterns_key(self, pattern_key : str) -> int | None:
         """패턴 키에서 크기 N 추출"""
-        match = re.match(r"^size_(\d+)_", pattern_key)
+        match = re.match(r"^size_(\d+)_", pattern_key) # pattern_key안에 data.json에 있는 "size_5_0"가 들어와서 match검사
         return int(match.group(1)) if match else None
 
 
@@ -180,8 +180,10 @@ class Mode_2():
             "reason": f"정상 처리 완료 (MAC Score: {score})"
         }
     #준비 및 흐름제어 
-
-    def process_pattern_flow(self, pattern_key:str, pattern_data:dict) -> dict:
+    def select_filter(self, pattern_key:str) -> tuple[int | None, dict]:
+        n_size = self.N_from_patterns_key(pattern_key)
+        
+    def select_filter(self, pattern_key:str, pattern_data:dict) -> dict:
         expected = pattern_data.get("expected", "UNKNOWN")# 0. 기본 기대 결과값 가져오기
         expected_label = only_normal(expected)
 
@@ -206,6 +208,8 @@ class Mode_2():
         
 # 검사할 데이터 2개 추출 (필터 2D 데이터, 입력 2D 데이터)
         filter_raws = self.filters[filter_key]
+        #cross_filter_data = filter_raws.get("cross",[])
+        #x_filter_data = filter_raws.get("x",[])
         input_raws = pattern_data.get("input", [])
         
 
@@ -232,6 +236,7 @@ class Mode_2():
             }
         return self.process_pattern(pattern_key, input_raws, filter_raws, n_size, expected_label, filter_label)
 
+
     def mode2_flow(self) -> None:
         print(f"\n -------[모드 2] {self.json_path} 자동 일괄 분석 ---------------")
         try:
@@ -245,8 +250,24 @@ class Mode_2():
             return
 
         self.filters = raw_data.get("filters",{})
-        self.patterns = raw_data.get("patterns",{})
+        self.patterns = raw_data.get("patterns",{})# patterns의 값을 가져옴
+        print("\n#---------------------------------------")
+        print("# [1] 필터 로드")
+        print("#---------------------------------------")
+        for f_key in self.filters.keys(): #딕셔너리의 key만 모을 수 있는 함수!
+            print(f"✓ {f_key:<10} 필터 로드 완료 (Cross, X)")
 
+        print("\n#---------------------------------------")
+        print("# [2] 패턴 분석(라벨 정규화 적용)")
+        print("#---------------------------------------")
+
+        for p_key, p_data in self.patterns.items(): # ex) p_key: size_3_01 p_data: {input[]},expected
+            print(f"\n- --{p_key}---")
+            score_cross = p_data.get("score_cross",1.0) # p_data에는 score_cross가 없는데?
+
+            
+              
+        
         print("\n"+"="*50)
         print("\n분석 결과 목록")
         for p_key, p_data in self.patterns.items():
