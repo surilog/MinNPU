@@ -4,17 +4,18 @@ import json
 
 
 def only_normal(label_raw: str) -> str:
-    if not label_raw:
-        return "UNKNOWN"
+        if not label_raw:
+            return "UNKNOWN"
 
-    clean = str(label_raw).strip().lower()
+        clean = str(label_raw).strip().lower()
 
-    if clean in ["+","cross"]:
-        return "Cross"
-    elif clean in ["x"]:
-        return "X"
-    else:
-        return "UNKNOWN"
+        if clean in ["+","cross"]:
+            return "Cross"
+        elif clean in ["x"]:
+            return "X"
+        else:
+            return "UNKNOWN"
+
 
 class Matrix:
     def __init__(self, size : int, data:list=None):
@@ -30,7 +31,7 @@ class Matrix:
         print(self.matrix)
         
         print(self.n)"""
-
+    
     def mac(self, pathern: 'Matrix') -> float | None:
             if self.n != pathern.n:
                 print(f" 오류 : 행렬 크기가 맞지 않습니다. ({self.n}*{self.n}) VS ({pathern.n}*{pathern.n})")
@@ -146,14 +147,89 @@ class Mode_2():
         self.filters = {}
         self.patterns = {}
 
+    def load_data(self) -> bool:
+        try:
+            with open(self.json_path,"r",encoding="utf-8") as f:
+                read_data = json.load(f)
+        except (FileNotFoundError, json.JSONDecodeError) as e:
+            print("[오류] 파일 로드 실패 : {e}")
+            return False
 
-    def N_from_patterns_key(self, pattern_key : str) -> int | None:
-        """패턴 키에서 크기 N 추출"""
-        match = re.match(r"^size_(\d+)_", pattern_key) # pattern_key안에 data.json에 있는 "size_5_0"가 들어와서 match검사
-        return int(match.group(1)) if match else None
+        raw_filters = read_data.get("filters",{})
+        raw_patterns = read_data.get("patterns",{})
+        self.filters = {}
+        self.patterns = {}
 
+        for f_key, f_value in raw_filters.items():
+            try:
+                n_size = int(f_key.split('_')[1])
+            except(IndexError,ValueError) as e:
+                print("[오류]")
+                n_size = None
 
-    #동작 메서드/ 데이터 검문소!
+            self.filters[f_key] = {
+                "n_size" : n_size,
+                "cross" : f_value.get("cross",[]),
+                "x" : f_value.get("x",[])
+            }
+            
+        for p_key, p_value in raw_patterns.items():
+            try:
+                n_size = int(p_key.split('_')[1])
+            except(IndexError,ValueError):
+                print("[오류]")
+                n_size = None
+
+            self.patterns[p_key] = {
+                "n_size" : n_size,
+                "input" : p_value.get("input",[]),
+                "expected" : p_value.get("expected","UNKNOWN")
+            }
+
+        return True
+ 
+    def check_filter_pattern(self, n_size: int, input_data: list, cross_data: list, x_data: list) -> tuple[bool,str]:
+        if n_size is None or n_size <=0:
+            return False, "N 크기 파싱 실패"
+        targets = [
+            ("입력 패턴 ", input_data),
+            ("Cross 필터", cross_data),
+            ("X 필터", x_data)
+        ]
+
+        for name, input in targets:
+            if len(input) != n_size or any(len(row) != n_size for row in input):
+                return False, f"{name} 크기 불일치 (N={n_size})"# input, Cross, X필터 중 에러뜨면 에러 뜬 곳과 이유 반환!
+        return True, "정상"
+    """1. N 크기가 올바른 숫자인지 검사 (n_size > 0)
+            2. input 데이터가 N개 행 & 각 행이 N개 열인지 검사
+            3. Cross 필터 데이터가 N x N 인지 검사
+            4. X 필터 데이터가 N x N 인지 검사
+            => 하나라도 틀리면 (False, "에러 이유") 반환!"""
+    
+    def analyze_pattern(self, n_size, input_data, cross_data, x_data):
+       
+        input_mat = Matrix(n_size, input_data)
+        cross_mat = Matrix(n_size, cross_data)
+        x_mat = Matrix(n_size, x_data)
+
+        score_cross=input_mat.mac(cross_mat)
+        score_x=input_mat.mac(x_mat)
+
+        expected = only_normal(expected_raw)
+        normalize_x = only_normal(score_x)
+
+        """ [2-1단계] Matrix 객체 생성      ──> 2D 데이터 리스트를 Matrix 클래스로 변환
+        [2-2단계] MAC 점수 연산         ──> input_mat.mac()으로 Cross, X 점수 계산
+        [2-3단계] 라벨 정규화          ──> only_normal()로 expected 라벨 정리
+        [2-4단계] 점수 비교 및 판정/리턴 ──> 크기 비교, 동점 처리(UNDECIDED), dict 반환"""
+
+        """input_mat = Matrix(n_size, input_data)
+            cross_mat = Matrix(n_size, cross_data)
+            x_mat     = Matrix(n_size, x_data)"""
+
+# 핵심 동작 흐름
+        
     def process_pattern(
             self, pattern_key:str, input_data:list, standard_filter: list,
             n_size: int, expected:str, filter_label: str) -> dict:
@@ -180,10 +256,9 @@ class Mode_2():
             "reason": f"정상 처리 완료 (MAC Score: {score})"
         }
     #준비 및 흐름제어 
-    def select_filter(self, pattern_key:str) -> tuple[int | None, dict]:
-        n_size = self.N_from_patterns_key(pattern_key)
+
         
-    def select_filter(self, pattern_key:str, pattern_data:dict) -> dict:
+    def process_pattern_flow(self, pattern_key:str, pattern_data:dict) -> dict:
         expected = pattern_data.get("expected", "UNKNOWN")# 0. 기본 기대 결과값 가져오기
         expected_label = only_normal(expected)
 
@@ -239,18 +314,10 @@ class Mode_2():
 
     def mode2_flow(self) -> None:
         print(f"\n -------[모드 2] {self.json_path} 자동 일괄 분석 ---------------")
-        try:
-            with open(self.json_path, "r", encoding="utf-8") as f:
-                raw_data = json.load(f)
-        except FileNotFoundError:
-            print(f"오류 : '{self.json_path}' 파일을 찾을 수 없습니다.")
-            return
-        except json.JSONDecodeError:
-            print(f"오류: '{self.json_path}' 파일 형식이 올바르지 않습니다.")
+        if not self.load_data():
+            print("[오류] 데이터를 불러오지 못해 분석을 중단합니다.")
             return
 
-        self.filters = raw_data.get("filters",{})
-        self.patterns = raw_data.get("patterns",{})# patterns의 값을 가져옴
         print("\n#---------------------------------------")
         print("# [1] 필터 로드")
         print("#---------------------------------------")
@@ -268,11 +335,11 @@ class Mode_2():
             
               
         
-        print("\n"+"="*50)
+        """ print("\n"+"="*50)
         print("\n분석 결과 목록")
         for p_key, p_data in self.patterns.items():
             res = self.process_pattern_flow(p_key, p_data)
-            print(f"ID: {res['id']} | 상태: {res['status']} | 결과: {res['reason']}")
+            print(f"ID: {res['id']} | 상태: {res['status']} | 결과: {res['reason']}")"""
 
 
 
