@@ -1,6 +1,7 @@
 import array
 import re
 import json
+import time
 
 
 def only_normal(label_raw: str) -> str:
@@ -31,8 +32,21 @@ class Matrix:
         print(self.matrix)
         
         print(self.n)"""
-    
-    def mac(self, pathern: 'Matrix') -> float | None:
+    def time_ch(self, start_time : int):
+        self.start_time = time.time()
+
+        self.end_time = time.time()
+
+        # 연산 함수 호출하고 연산 수행 시 동시에 { start_time = time.time() 시간 측정시작! 하고 연산 끝나면 
+        #  end_time = time.time()후} result_time =end_time - start_time 
+        # 근데 sum_time+=reuslt_time / average_time= sum_time/10
+
+        """크기별 MAC 연산 시간을 ms 단위로 측정해야 한다.
+        최소 기준: 각 크기별로 MAC 연산을 10회 반복 측정 후 평균 시간을 출력한다.
+        시간 측정은 I/O(입력/출력/파일 읽기) 시간을 제외하고 “연산 함수 호출 구간” 중심으로 수행하는 것을 권장한다.
+        """
+    def mac(self, pathern: 'Matrix') -> tuple[float,float]  | None:  
+            #튜플 사용 이유 새롭게 알게 된 점: 한 번 생성되면 내부 값을 변경할 수 없다! => 즉 고정데이터로 활용 가능
             if self.n != pathern.n:
                 print(f" 오류 : 행렬 크기가 맞지 않습니다. ({self.n}*{self.n}) VS ({pathern.n}*{pathern.n})")
                 return None
@@ -40,12 +54,22 @@ class Matrix:
                 print("오류 : 행렬 데이터가 없습니다. ")
                 return None
     
+
+            num_runs = 10
+            full_time = 0.0
+            total_sum=0.0
             #제너레이터를 쓰면 0부터 더해서 초기화 필요 X
-            total_sum = sum(
-                self.data[r][c] * pathern.data[r][c]
-                for r in range(self.n)
-                for c in range(self.n)
-            )
+            for __ in range(num_runs):
+                start_time = time.perf_counter() # time.time()대신 사용 이유: 마이크로처 단위의 매우 높은 정밀도
+                total_sum = sum(              
+                    self.data[r][c] * pathern.data[r][c]
+                    for r in range(self.n)
+                    for c in range(self.n)
+                )
+                end_time = time.perf_counter()
+                full_time += end_time - start_time
+            avg_time = (full_time / num_runs) * 1000.0 #밀리 초는 1초의 1천분의 1
+
             """total_sum= sum(self.data[r][c] * pathern.data[r][c]for r in range(self.n)for c in range(self.n))"""
             """
             total_sum = 0.0
@@ -53,7 +77,7 @@ class Matrix:
             for r in range(self.n):
                 for c in range(self.n):
                     total_sum += self.data[r][c] * pathern.data[r][c]"""
-            return float(total_sum)
+            return total_sum, avg_time
 
     """  
     def get_val(self, r: int, c: int) -> float:
@@ -61,12 +85,7 @@ class Matrix:
 
     def set_val(self, r:int, c:int, val : float):
         self.data[r][c] = val# (r,c)위치에 값 저장
-        """
-
-    def display(self):
-        print(f"[{self.n}x{self.n}  ")
-        for row in self.data:
-            print(row)
+    """
 
 class Mode_1:
 
@@ -233,13 +252,16 @@ class Mode_2():
         cross_mat = Matrix(n_size, cross_data)
         x_mat = Matrix(n_size, x_data)
 
-        score_cross=input_mat.mac(cross_mat)
-        score_x=input_mat.mac(x_mat)
-        #함수 호출을 어떻게 할건지? 과정부터 정하자!
+        score_cross, time_cross=input_mat.mac(cross_mat)
+        score_x, time_x = input_mat.mac(x_mat)
 
+        #함수 호출을 어떻게 할건지? 과정부터 정하자!
+        
         expected = only_normal(f_expected)#라벨까지 해주고 
+        avg_time = (time_cross + time_x)/2.0 #각각 10회면 총 20회이니 2로 나눔
 
         
+       
         """
         run() -> mode2_flow() -> load_data()호출 -> [1]필터로드 화면 출력 -> 패턴 수 만큼 반복문 실행(for p_key in self.pattern.key()) 
         -> check_filter_pattern()호출 -> analyze_pattern(p_key) 호출 ->dict형태로 반환 ->  [2]패턴 분석 결과 화면 출력
@@ -266,7 +288,8 @@ class Mode_2():
             "expected" : expected,
             "result" : result,
             "status" : status,
-            "reason" : reason
+            "reason" : reason,
+            "avg_time" : avg_time
         }
         """ [2-1단계] Matrix 객체 생성      ──> 2D 데이터 리스트를 Matrix 클래스로 변환
         [2-2단계] MAC 점수 연산         ──> input_mat.mac()으로 Cross, X 점수 계산
@@ -376,6 +399,7 @@ class Mode_2():
         for f_key in self.filters.keys(): #딕셔너리의 key만 모을 수 있는 함수!
             print(f"✓ {f_key:<10} 필터 로드 완료 (Cross, X)")
 
+        valid_reuslt = {} #성능분석시에 사용할 패턴별 연산 결과를 담아둘 딕셔너리
         print("\n#---------------------------------------")
         print("# [2] 패턴 분석(라벨 정규화 적용)")
         print("#---------------------------------------")
@@ -389,11 +413,29 @@ class Mode_2():
                 continue
 
             analyze_result = self.analyze_pattern(p_key)
+            valid_reuslt[p_key] = analyze_result
             print(f"Cross 점수: {analyze_result['score_cross']}")
             print(f"X점수 : {analyze_result['score_x']}")
             print(f"판정: {analyze_result['result']} | expected: {analyze_result['expected']} | {analyze_result['status']} {analyze_result['reason']} ")
 
+        print("\n#---------------------------------------")
+        print("# [3] 성능 분석 (평균/10회)")
+        print("#---------------------------------------")
+        print(f"{'크기':<12}{'평균 시간(ms)':<16}{'연산 횟수':<12}")
+        print("#---------------------------------------")
 
+
+
+        for p_key, p_value in valid_reuslt.items():
+            n_size= self.patterns[p_key].get("n_size",0)
+            #흠..평균 시간 어떻게 불러오지? mac()함수를 또 불러오는건 로직 낭비.. 이미 불러왔던것 사용 
+            # 근데 analyze_pattern()에서는 mac함수를 사용!
+            size=f"{n_size}x{n_size}"
+            avg_time = p_value['avg_time']
+            count = n_size * n_size
+            print(f"{size:<12}{avg_time:<16.3f}{count:<12}")
+
+        print("#---------------------------------------")
     
         
         """ print("\n"+"="*50)
