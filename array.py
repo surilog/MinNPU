@@ -188,13 +188,22 @@ class Mode_2():
 
         return True
  
-    def check_filter_pattern(self, n_size: int, input_data: list, cross_data: list, x_data: list) -> tuple[bool,str]:
+    def check_filter_pattern(self, p_key : str) -> tuple[bool,str]:
+        p_data = self.patterns.get(p_key,{})
+        n_size = p_data.get("n_size",0)
+        input_data = p_data.get("input",[])
+
         if n_size is None or n_size <=0:
             return False, "N 크기 파싱 실패"
+
+        f_key = f"size_{n_size}"
+        f_data = self.filters.get(f_key, {})
+        cross_filter = f_data.get("cross",{})
+        x_filter = f_data.get("x",{})
         targets = [
             ("입력 패턴 ", input_data),
-            ("Cross 필터", cross_data),
-            ("X 필터", x_data)
+            ("Cross 필터", cross_filter),
+            ("X 필터", x_filter)
         ]
 
         for name, input in targets:
@@ -207,29 +216,58 @@ class Mode_2():
             4. X 필터 데이터가 N x N 인지 검사
             => 하나라도 틀리면 (False, "에러 이유") 반환!"""
     
-    def analyze_pattern(self, patterns: dict)->dict:
-       
-        input_mat = Matrix(self.n_size, self.input_data)
-        cross_mat = Matrix(self.n_size, self.cross_data)
-        x_mat = Matrix(self.n_size, self.x_data)
+    def analyze_pattern(self, p_key: str)->dict:
+
+        p_data = self.patterns.get(p_key, {}) 
+        n_size = p_data.get("n_size",0)
+        input_data = p_data.get("input",[])
+        f_expected = p_data.get("expected","UNKNOWN")
+
+        #정규화 하려면 패턴 값에 따른 필터 필요!
+        f_key = f"size_{n_size}"
+        f_data = self.filters.get(f_key,{})
+        cross_data = f_data.get("cross",[])
+        x_data = f_data.get("x",[])
+
+        input_mat = Matrix(n_size, input_data) # 크기 정보와 데이터 묶어서 객체로 만듬.(바로 mac함수 사용)
+        cross_mat = Matrix(n_size, cross_data)
+        x_mat = Matrix(n_size, x_data)
 
         score_cross=input_mat.mac(cross_mat)
         score_x=input_mat.mac(x_mat)
         #함수 호출을 어떻게 할건지? 과정부터 정하자!
+
+        expected = only_normal(f_expected)#라벨까지 해주고 
+
         
         """
-        run() -> mode2_flow() -> load_data()호출 -> [1]필터로드 화면 출력 -> 패턴 수 만큼 반복문 실행 -> check_filter_pattern()호출
-        -> analyze_pattern(p_key) 호출 ->dict형태로 반환 ->  [2]패턴 분석 결과 화면 출력
+        run() -> mode2_flow() -> load_data()호출 -> [1]필터로드 화면 출력 -> 패턴 수 만큼 반복문 실행(for p_key in self.pattern.key()) 
+        -> check_filter_pattern()호출 -> analyze_pattern(p_key) 호출 ->dict형태로 반환 ->  [2]패턴 분석 결과 화면 출력
         """
-        expected = only_normal(self.expected)
-        if score_x == score_cross:
-            return "UNDECIDED"
-        elif score_x> score_cross:
-            return "X"
-        elif score_x<score_cross:
-            return "Cross"
 
-        return dict
+        if score_x == score_cross:
+            result =  "UNDECIDED"
+            status = "FAIL"
+            reason = "(동점 규칙)"
+
+        elif score_x < score_cross:
+            result = "Cross"
+            status = "PASS" if expected == "Cross" else "FAIL"
+            reason = "정상" 
+
+        else :
+            result = "X"
+            status = "PASS" if expected == "X" else "FAIL"
+            reason= "정상"
+
+        return {
+            "score_cross" : score_cross,
+            "score_x" : score_x,
+            "expected" : expected,
+            "result" : result,
+            "status" : status,
+            "reason" : reason
+        }
         """ [2-1단계] Matrix 객체 생성      ──> 2D 데이터 리스트를 Matrix 클래스로 변환
         [2-2단계] MAC 점수 연산         ──> input_mat.mac()으로 Cross, X 점수 계산
         [2-3단계] 라벨 정규화          ──> only_normal()로 expected 라벨 정리
@@ -328,7 +366,10 @@ class Mode_2():
         if not self.load_data():
             print("[오류] 데이터를 불러오지 못해 분석을 중단합니다.")
             return
-
+        """
+        run() -> mode2_flow() -> load_data()호출 -> [1]필터로드 화면 출력 -> 패턴 수 만큼 반복문 실행(for p_key in self.pattern.key()) 
+        -> check_filter_pattern()호출 -> analyze_pattern(p_key) 호출 ->dict형태로 반환 ->  [2]패턴 분석 결과 화면 출력
+        """
         print("\n#---------------------------------------")
         print("# [1] 필터 로드")
         print("#---------------------------------------")
@@ -339,13 +380,21 @@ class Mode_2():
         print("# [2] 패턴 분석(라벨 정규화 적용)")
         print("#---------------------------------------")
 
-        for p_key, p_data in self.patterns.items(): # ex) p_key: size_3_01 p_data: {input[]},expected
-            print(f"\n- --{p_key}---")
-            score_cross = p_data.get("score_cross",1.0) # p_data에는 score_cross가 없는데?
-            print(f"Cross 점수: {self.score_cross}")
-            print(f"X점수 : {self.score_x}")
-            print(f"판정 : {self.analyze_pattern()} | expected: {self.expected} | {self.pass_or_Fail}")
-              
+        for p_key in self.patterns.keys():
+            print(f"- --{p_key} ---")
+
+            is_size_valid, size_error_reason = self.check_filter_pattern(p_key)
+            if not is_size_valid:
+                print(f"판정 : ERROR | FAIL ({size_error_reason})\n")
+                continue
+
+            analyze_result = self.analyze_pattern(p_key)
+            print(f"Cross 점수: {analyze_result['score_cross']}")
+            print(f"X점수 : {analyze_result['score_x']}")
+            print(f"판정: {analyze_result['result']} | expected: {analyze_result['expected']} | {analyze_result['status']} {analyze_result['reason']} ")
+
+
+    
         
         """ print("\n"+"="*50)
         print("\n분석 결과 목록")

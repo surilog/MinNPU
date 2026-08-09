@@ -180,8 +180,7 @@ class Mode_2():
             "reason": f"정상 처리 완료 (MAC Score: {score})"
         }
     #준비 및 흐름제어 
-    def 
-    def check_filter_pattern()
+
     def select_filter(self, pattern_key:str, pattern_data:dict) -> dict:
         expected = pattern_data.get("expected", "UNKNOWN")# 0. 기본 기대 결과값 가져오기
         expected_label = only_normal(expected)
