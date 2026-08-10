@@ -266,21 +266,30 @@ class Mode_2():
         run() -> mode2_flow() -> load_data()호출 -> [1]필터로드 화면 출력 -> 패턴 수 만큼 반복문 실행(for p_key in self.pattern.key()) 
         -> check_filter_pattern()호출 -> analyze_pattern(p_key) 호출 ->dict형태로 반환 ->  [2]패턴 분석 결과 화면 출력
         """
-
+    
         if score_x == score_cross:
             result =  "UNDECIDED"
             status = "FAIL"
-            reason = "(동점 규칙)"
-
+            reason = "(동점(UNDECIDED)처리 규칙에 따른 FAIL)"
+        
         elif score_x < score_cross:
             result = "Cross"
-            status = "PASS" if expected == "Cross" else "FAIL"
-            reason = "정상" 
-
+             
+            if expected == "Cross" :
+                status = "PASS"
+                reason = "정상" 
+            else:
+                status = "FAIL"
+                reason = f"불일치(예측: {expected} / 결과: Cross)에 따른 FAIL"
+            
         else :
             result = "X"
-            status = "PASS" if expected == "X" else "FAIL"
-            reason= "정상"
+            if expected == "X": 
+                status = "PASS" 
+                reason= "정상"
+            else :
+                status  ="FAIL"
+                reason = f"불일치(예측: {expected} / 결과: X)에 따른 FAIL"
 
         return {
             "score_cross" : score_cross,
@@ -404,20 +413,33 @@ class Mode_2():
         print("# [2] 패턴 분석(라벨 정규화 적용)")
         print("#---------------------------------------")
 
+        total_count= 0
+        pass_count =0
+        fail_case = []
+
+        
         for p_key in self.patterns.keys():
             print(f"- --{p_key} ---")
+            total_count +=1
 
             is_size_valid, size_error_reason = self.check_filter_pattern(p_key)
             if not is_size_valid:
                 print(f"판정 : ERROR | FAIL ({size_error_reason})\n")
+                fail_case.append((p_key,size_error_reason))
                 continue
 
             analyze_result = self.analyze_pattern(p_key)
             valid_reuslt[p_key] = analyze_result
+
+            
             print(f"Cross 점수: {analyze_result['score_cross']}")
             print(f"X점수 : {analyze_result['score_x']}")
             print(f"판정: {analyze_result['result']} | expected: {analyze_result['expected']} | {analyze_result['status']} {analyze_result['reason']} ")
 
+            if analyze_result["status"]=="PASS":
+                pass_count+=1
+            else:
+                fail_case.append((p_key,analyze_result["reason"]))
         print("\n#---------------------------------------")
         print("# [3] 성능 분석 (평균/10회)")
         print("#---------------------------------------")
@@ -433,16 +455,26 @@ class Mode_2():
             size=f"{n_size}x{n_size}"
             avg_time = p_value['avg_time']
             count = n_size * n_size
+
             print(f"{size:<12}{avg_time:<16.3f}{count:<12}")
 
         print("#---------------------------------------")
-    
-        
-        """ print("\n"+"="*50)
-        print("\n분석 결과 목록")
-        for p_key, p_data in self.patterns.items():
-            res = self.process_pattern_flow(p_key, p_data)
-            print(f"ID: {res['id']} | 상태: {res['status']} | 결과: {res['reason']}")"""
+        print("# [4] 결과 요약") 
+        print("#---------------------------------------")
+
+        fail_count = len(fail_case)
+
+       
+
+        print(f"총 테스트: {total_count}개")
+        print(f"통과: {pass_count}개")
+        print(f"실패: {fail_count}개\n")
+
+        if  fail_case:
+            print("실패 케이스")
+            for p_key, reason in fail_case:
+                print(f"- {p_key}: {reason}")
+        print("\n")
 
 
 
