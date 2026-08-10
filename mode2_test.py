@@ -101,7 +101,7 @@ class Mode_1:
                     break
 
                 try:
-                    rows = [int(x) for x in row]
+                    rows = [float(x) for x in row]
                     final_arr.append(rows)
 
                 except ValueError:
