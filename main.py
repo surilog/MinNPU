@@ -1,5 +1,3 @@
-import array
-import re
 import json
 import time
 
@@ -61,22 +59,27 @@ class Matrix:
             #제너레이터를 쓰면 0부터 더해서 초기화 필요 X
             for __ in range(num_runs):
                 start_time = time.perf_counter() # time.time()대신 사용 이유: 마이크로처 단위의 매우 높은 정밀도
-                total_sum = sum(              
-                    self.data[r][c] * pathern.data[r][c]
-                    for r in range(self.n)
-                    for c in range(self.n)
-                )
+                total_sum = 0
+                for r in range(self.n):
+                    for c in range(self.n):
+                        total_sum += self.data[r][c] * pathern.data[r][c]
+
                 end_time = time.perf_counter()
                 full_time += end_time - start_time
             avg_time = (full_time / num_runs) * 1000.0 #밀리 초는 1초의 1천분의 1
+            # 임시 진단 코드
 
-            """total_sum= sum(self.data[r][c] * pathern.data[r][c]for r in range(self.n)for c in range(self.n))"""
-            """
-            total_sum = 0.0
+            """기존 소수점 차이 X 코드 
+            total_sum = sum(              
+                                self.data[r][c] * pathern.data[r][c]
+                                for r in range(self.n)
+                                for c in range(self.n)
+            #메모리에 리스트 전체를 만들어두지 않고, 필요할 때마다 원소를 하나씩 생성(연산)하여  sum에 받는 즉시 누적하여 저장
+                            )
             
-            for r in range(self.n):
-                for c in range(self.n):
-                    total_sum += self.data[r][c] * pathern.data[r][c]"""
+            """
+           
+
             return total_sum, avg_time
 
     """  
@@ -287,7 +290,8 @@ class Mode_2():
         avg_time = (time_cross + time_x)/2.0 #각각 10회면 총 20회이니 2로 나눔
 
         
-       
+       # 임시 진단 코드
+
         """
         run() -> mode2_flow() -> load_data()호출 -> [1]필터로드 화면 출력 -> 패턴 수 만큼 반복문 실행(for p_key in self.pattern.key()) 
         -> check_filter_pattern()호출 -> analyze_pattern(p_key) 호출 ->dict형태로 반환 ->  [2]패턴 분석 결과 화면 출력
@@ -298,7 +302,7 @@ class Mode_2():
             status = "FAIL"
             reason = "(동점(UNDECIDED)처리 규칙에 따른 FAIL)"
         
-        elif score_x < score_cross:
+        elif score_cross > score_x:
             result = "Cross"
              
             if expected == "Cross" :
@@ -377,8 +381,8 @@ class Mode_2():
             valid_result[p_key] = analyze_result
 
             
-            print(f"Cross 점수: {analyze_result['score_cross']:.16f}")
-            print(f"X점수 : {analyze_result['score_x']:.16f}")
+            print(f"Cross 점수: {analyze_result['score_cross']:.17f}")
+            print(f"X점수 : {analyze_result['score_x']:.17f}")
             print(f"판정: {analyze_result['result']} | expected: {analyze_result['expected']} | {analyze_result['status']} {analyze_result['reason']} ")
 
             if analyze_result["status"]=="PASS":
@@ -391,7 +395,7 @@ class Mode_2():
         print(f"{'크기':<12}{'평균 시간(ms)':<16}{'연산 횟수':<12}")
         print("#---------------------------------------")
 
-
+        
 
         for p_key, p_value in valid_result.items():
             n_size= self.patterns[p_key].get("n_size",0)
@@ -410,7 +414,7 @@ class Mode_2():
         fail_count = len(fail_case)
 
        
-
+        
         print(f"총 테스트: {total_count}개")
         print(f"통과: {pass_count}개")
         print(f"실패: {fail_count}개\n")
@@ -420,6 +424,11 @@ class Mode_2():
             for p_key, reason in fail_case:
                 print(f"- {p_key}: {reason}")
         print("\n")
+        print("=" * 60)
+        print("[수치 정밀도 검증] IEEE 754 부동소수점 오차 및 Epsilon 처리 시연")
+        print("=" * 60)
+
+
 
 
 
@@ -454,33 +463,3 @@ class Manager:
 if __name__ == "__main__":
     manager = Manager()
     manager.run()
-
-   
-    """ try:
-        n_size = int(input("만들고 싶은 N x N 배열의 크기(N)를 입력하세요:  "))
-
-        if n_size <= 0:
-            print("크기는 1 이상의 양수여야 합니다! ")
-        else:
-            pattern=Matrix(n_size)
-            while True:
-                if pattern.user_input(name="사용자 패턴"):
-                    break
-                print("다시 시도해 주세요.\n")
-
-        # 결과 확인
-        pattern.display()
-
-    except ValueError:
-        print("N은 정수여야 합니다.")
-         my_matrix = Matrix(n_size)
-        print("--기본 생성된 배열")
-        my_matrix.display()
-
-        for i in range(n_size):
-            my_matrix.set_val(i,i,1.0)
-        print("\n--대각선 값을 1로 변경한 후 배열")
-        my_matrix.display()
-
-    except ValueError:
-        print("올바른 정수를 입력해주세요.")"""

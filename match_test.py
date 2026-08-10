@@ -9,3 +9,5 @@ if match:
     
     n = int(match.group(1))
     print(n, type(n))      # 출력: 25 <class 'int'> (숫자로 변환 완료!)
+
+    
