@@ -4,8 +4,8 @@ li = []
 
 #리스트 컴프리헨션 없이
 for i in range(5):
-
     li.append(i)
+
 print("리스트 컴프리헨션 없이: ",li)
 
 # 리스트 컴프리헨션 사용
@@ -25,7 +25,7 @@ li2 = []
 # 2차원 리스트 컴프리헨션
 li2 = [[0 for _ in range(5)] for _ in range(5)]
 print("리스트 컴프리헨션 사용: ",li2)
-
+# 안쪽[]가 세로 바깥쪽이 가로라고 보면 편함!
 
 for _ in range(3):
     print("안녕")  # "안녕"이 3번 출력됩니다.

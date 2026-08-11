@@ -25,7 +25,7 @@ try:
     Bothdata(3) 
 except TypeError:
     print("[오류!] __init__ 필수 인자는 3개인데, 'data'가 빠진 2개(self,3)만 전달되었습니다.")
-# 💥 TypeError: missing 1 required positional argument: 'data'
+#  TypeError: missing 1 required positional argument: 'data'
 
 
 # --------------------------------------------------
@@ -44,4 +44,4 @@ try:
     mat2 = FixedMatrix(3, [[1,0], [0,1]])   # 인자 2개 ok (모드 2)
     print("이거는 원래 되야되지.")
 except TypeError:
-    print("아지고 인자 에러가 있다니..")
+    print("아직도 인자 에러가 있다니..")
