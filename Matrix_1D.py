@@ -6,8 +6,8 @@ class Matrix_1D:
         from Matrix import Matrix
         # 1. 전달받은 입력이 Matrix 객체인지, 일반 리스트인지 판별
         if isinstance(data_input, Matrix): #isinstance: 객체가 특정 클래스의 인스턴스인지 확인하는 함수 맞으면 True, 아니면 False
-            # Matrix 객체라면 그 내부의 .data (2차원 리스트)를 추출
-            source_data = data_input.data
+            # Matrix 객체라면 그 내부의 사이즈(n) 말고 .data (2차원 리스트)를 추출
+            source_data = data_input.data 
         elif isinstance(data_input, list):
             source_data = data_input
         else:
@@ -16,6 +16,13 @@ class Matrix_1D:
         # 2. 1차원 배열(Flatten)로 변환
         if source_data:
             self.data_1d = [val for row in source_data for val in row]
+
+            """
+            data_1d = []
+            for row in source_data:
+                for val in row:
+                     data_1d.append(val)
+            """
         else:
             self.data_1d = [1.0] * (size * size)
 
@@ -38,30 +45,5 @@ class Matrix_1D:
    이러면 원래 데이터를 그대로 사용하면서 바로 비교 가능!
 """
             
-class Made_pattern:
-    def cross(self, n: int) -> list[list[float]]:
-        matrix = [[0.0] * n for _ in range(n)]
-        mid = n//2
-
-        for r in range(n):                                                  
-            for c in range(n):
-                if n % 2 ==1 :
-                    if r == mid or c == mid:
-                        matrix[r][c] = 1.0
-                else:
-                    if r in (mid - 1 ,mid) or c in (mid -1, mid):
-                        matrix[r][c] = 1.0
-        return matrix
-
-    def x(self,n : int) -> list[list[float]]:
-        matrix =[[0.0]* n for _ in range(n)]
-        for r in range(n):
-            for c in range(n):
-                if r == c or r+c ==n-1:
-                    matrix[r][c] =1.0
-        return matrix
-# 기존 모드 1에서 입력 받았고 출력도 그대로 하는 로직에서  1d로 바꾸는 함수 호출 후 1dmac함수를 실행하여 결과값을 받아와서 기존 로직에서 실행만 하면?
-
-
 
     

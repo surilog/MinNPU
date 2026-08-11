@@ -120,9 +120,15 @@ class Matrix:
             for __ in range(num_runs):
                 start_time = time.perf_counter() # time.time()대신 사용 이유: 마이크로처 단위의 매우 높은 정밀도
                 total_sum = 0
-                for r in range(self.n):
+                total_sum = sum(              
+                                self.data[r][c] * pathern.data[r][c]
+                                for r in range(self.n)
+                                for c in range(self.n)
+                            #메모리에 리스트 전체를 만들어두지 않고, 필요할 때마다 원소를 하나씩 생성(연산)하여  sum에 받는 즉시 누적하여 저장
+                             )
+                """for r in range(self.n):
                     for c in range(self.n):
-                        total_sum += self.data[r][c] * pathern.data[r][c]
+                        total_sum += self.data[r][c] * pathern.data[r][c]"""
 
                 end_time = time.perf_counter()
                 full_time += end_time - start_time
@@ -130,12 +136,7 @@ class Matrix:
             # 임시 진단 코드
 
             """기존 소수점 차이 X 코드 
-            total_sum = sum(              
-                                self.data[r][c] * pathern.data[r][c]
-                                for r in range(self.n)
-                                for c in range(self.n)
-            #메모리에 리스트 전체를 만들어두지 않고, 필요할 때마다 원소를 하나씩 생성(연산)하여  sum에 받는 즉시 누적하여 저장
-                            )
+            
             
             """
            
