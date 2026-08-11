@@ -1,7 +1,75 @@
 import json
 import time
 
+
 EPSILON = 1e-9
+
+class Matrix_1D:
+    def __init__(self, size: int, data_input=None):
+        self.n = size
+        
+        # 1. 전달받은 입력이 Matrix 객체인지, 일반 리스트인지 판별
+        if isinstance(data_input, Matrix): #isinstance: 객체가 특정 클래스의 인스턴스인지 확인하는 함수 맞으면 True, 아니면 False
+            # Matrix 객체라면 그 내부의 .data (2차원 리스트)를 추출
+            source_data = data_input.data
+        elif isinstance(data_input, list):
+            source_data = data_input
+        else:
+            source_data = None
+
+        # 2. 1차원 배열(Flatten)로 변환
+        if source_data:
+            self.data_1d = [val for row in source_data for val in row]
+        else:
+            self.data_1d = [1.0] * (size * size)
+
+    def mac_1d(self, pattern: "Matrix_1D", num_runs: int =10000) -> tuple[float,float]:
+        size_N = self.n*self.n
+        d1= self.data_1d
+        d2= pattern.data_1d 
+
+        total_sum = sum(d1[i] * d2[i] for i in range(size_N))
+
+        start_time = time.perf_counter()
+        for _ in range(num_runs):
+            _ = sum(d1[i]*d2[i] for i in range(size_N))
+        end_time = time.perf_counter()
+        avg_time = ((end_time - start_time) /num_runs) * 1000.0
+        return total_sum, avg_time
+"""mode 1에서 입력받은 값을 가져와서 Matrix1D에서 1차원으로 바꾸고 mac_1d에서  연산 후 기존 mode1에서 출력
+   mode2에서 불러온 data.json에서 저장되어진 self.filters와 self.patterns의 정리된 값을 그대로 저장하되 배열만
+   2->1차원을 바꾸고 다시 저장 후 그 저장된 값들을 토대로 mac_1연산 수행 후 원래 로직이었언 mode2_flow에서 코드 로직 실행!
+   이러면 원래 데이터를 그대로 사용하면서 바로 비교 가능!
+"""
+            
+class Made_pattern:
+    def cross(self, n: int) -> list[list[float]]:
+        matrix = [[0.0] * n for _ in range(n)]
+        mid = n//2
+
+        for r in range(n):                                                  
+            for c in range(n):
+                if n % 2 ==1 :
+                    if r == mid or c == mid:
+                        matrix[r][c] = 1.0
+                else:
+                    if r in (mid - 1 ,mid) or c in (mid -1, mid):
+                        matrix[r][c] = 1.0
+        return matrix
+
+    def x(self,n : int) -> list[list[float]]:
+        matrix =[[0.0]* n for _ in range(n)]
+        for r in range(n):
+            for c in range(n):
+                if r == c or r+c ==n-1:
+                    matrix[r][c] =1.0
+        return matrix
+# 기존 모드 1에서 입력 받았고 출력도 그대로 하는 로직에서  1d로 바꾸는 함수 호출 후 1dmac함수를 실행하여 결과값을 받아와서 기존 로직에서 실행만 하면?
+
+
+
+    
+
 def only_normal(label_raw: str) -> str:
         if not label_raw:
             return "UNKNOWN"
@@ -30,10 +98,6 @@ class Matrix:
         print(self.matrix)
         
         print(self.n)"""
-    def time_ch(self, start_time : int):
-        self.start_time = time.time()
-
-        self.end_time = time.time()
 
         # 연산 함수 호출하고 연산 수행 시 동시에 { start_time = time.time() 시간 측정시작! 하고 연산 끝나면 
         #  end_time = time.time()후} result_time =end_time - start_time 
@@ -92,6 +156,10 @@ class Matrix:
 
 class Mode_1:
 
+    def __init__(self):
+        # 4번 수정: self.Made_pattern -> self.made_pattern 인스턴스화
+        self.made_pattern = Made_pattern()
+
     def user_input(self, name:str, n_size: int) -> Matrix:
         mat=Matrix(n_size)
         print(f"\n[{name} 입력 ({n_size}x{n_size})]")
@@ -101,7 +169,7 @@ class Mode_1:
         while True :
             lines = []
             while True:
-                try:
+                try:# while문 반복을 통해 원하는 N크기 만큼 받고 빈 줄 입력시 나올 수 있음!
                     line = input().strip()#공백 포함 해서 받음
                     if not line:
                         break
@@ -121,7 +189,7 @@ class Mode_1:
                 if len(row) != n_size:
                     print(f"\n 오류 : {i}번째 줄의 숫자 개수({len(row)}개)가 N({n_size})과 맞지 않습니다.")
                     valied =  False
-                    break
+                    break # 이러한 에러 발생 시 다시 재입력 가능하게 while 문 안에 while 문을 넣은 것!
 
                 try:
                     rows = [float(x) for x in row]
@@ -149,10 +217,42 @@ class Mode_1:
             print("\n ---------------------------------------")
             filter_a = self.user_input("필터 A (Cross)", n_size)
             filter_b = self.user_input("필터 B (X)", n_size)
+            #여기서 각 필터 a 와 b 그리고 패턴 값들을 1차원을 변경하여 저장하는 변수 추가
+            print("\n [2]패턴 설정\n ---------------------------------------")
+            print("검사할 패턴 설정 방식:\n 1. 사용자 직접 입력\n 2. Cross(+) 패턴\n 3. X 패턴")
+            p_choice = input("선택 (1/2/3) >> ").strip()
 
-            print("\n [2]패턴 입력")
-            print("\n ---------------------------------------")
-            input_pattern = self.user_input("검사할 패턴", n_size)
+            input_pattern = Matrix(n_size)
+
+
+            if p_choice == "2":
+                print(f"자동 Cross(+) 패턴 생성 완료")
+                input_pattern.data = self.made_pattern.cross(n_size)
+            elif p_choice == "3":
+                print(f"자동 X 패턴 생성 완료")
+                input_pattern.data = self.made_pattern.x(n_size)
+            else:
+                input_pattern = self.user_input("검사할 패턴", n_size)
+
+            
+            filter_a_1d = Matrix_1D(n_size, filter_a)
+            filter_b_1d = Matrix_1D(n_size, filter_b)
+            input_pattern_1d = Matrix_1D(n_size, input_pattern)
+
+            
+            a_1mac = input_pattern_1d.mac_1d(filter_a_1d)
+            b_1mac = input_pattern_1d.mac_1d(filter_b_1d)
+
+            score_1a ,a1_time = a_1mac
+            score_1b ,b1_time = b_1mac
+            avg_1time = (a1_time + b1_time) / 2
+
+            if abs(score_1b - score_1a) < EPSILON:
+                win_1score="판정불가(|A-B| < 1e-9)"
+            elif score_1a > score_1b:
+                win_1score="A"
+            else:
+                win_1score="B"
 
             a_mac = input_pattern.mac(filter_a)
             b_mac = input_pattern.mac(filter_b)
@@ -173,14 +273,23 @@ class Mode_1:
             else :
                 win_score="B"
             
-
+            # mode_1 flow() 메서드 출력값으로 최적화 성능 분석도 확인 위해 mac_1()함수 로 계산한 값을 출력
             print("\n [3]MAC 결과")
             print("\n ---------------------------------------")
             print("\n" + "="*40)
             print(f"필터 A(Cross)와의 Mac 점수 : {score_a}")
             print(f"필터 B(X)와의 Mac 점수 : {score_b}")
-            print(f"연산 시간(평균/10회): {avg_time:.3f}")
+            print(f"연산 시간(평균/10회): {avg_time:.6f}ms")
             print(f"판정: {win_score}")
+            print("=" * 40 + "\n")
+
+            print("\n [4] 최적화 비교")
+            print("\n ---------------------------------------")
+            print("\n" + "="*40)
+            print(f"최적화 필터 A(Cross)와의 Mac 점수 : {score_1a}")
+            print(f"최적화 필터 B(X)와의 Mac 점수 : {score_1b}")
+            print(f"최적화 연산 시간(평균/10회): {avg_1time:.6f}ms")
+            print(f"판정: {win_1score}")
             print("=" * 40 + "\n")
 
         except ValueError:
@@ -203,10 +312,18 @@ class Mode_2():
             print(f"[오류] 파일 로드 실패 : {e}")
             return False
 
+
         raw_filters = read_data.get("filters",{})
         raw_patterns = read_data.get("patterns",{})
         self.filters = {}
         self.patterns = {}
+
+        """ 지금 2 -> 1 차원 축소 함
+        이제 이 값들로 연산 수행 시작
+        """
+        
+
+
 
         for f_key, f_value in raw_filters.items():
             try:
@@ -233,6 +350,15 @@ class Mode_2():
                 "input" : p_value.get("input",[]),
                 "expected" : p_value.get("expected","UNKNOWN")
             }
+
+        
+
+        """
+        기존 mode 2에서 필터와 패턴 배열만 차원 을 1차원으로 바꿔.  그리고 mac_1d에서 연산 후 기존 mode2_flow()의 출력값 + mac_1d()연산 값을 수행하는 거지
+        여기서 핵심은 기존 값들을 없애면 안되. 기존 값 + 새로운 1d연산 값이 나오는 거니까
+        그리고 패턴생성기는 클래스를 별도로 하나 만들어놨어.
+
+        """
 
         return True
  
@@ -321,6 +447,21 @@ class Mode_2():
                 status  ="FAIL"
                 reason = f"불일치(예측: {expected} / 결과: X)에 따른 FAIL"
 
+        input_mat_1d = Matrix_1D(n_size, input_mat)
+        cross_mat_1d = Matrix_1D(n_size, cross_mat)
+        x_mat_1d = Matrix_1D(n_size, x_mat)
+
+        score_cross_1d , time_cross_1d = input_mat_1d.mac_1d(cross_mat_1d)
+        score_x_1d, time_x_1d = input_mat_1d.mac_1d(x_mat_1d)
+        avg_time_1d = (time_cross_1d + time_x_1d) / 2.0
+
+        if abs(score_cross_1d - score_x_1d) < EPSILON:
+            result_1d = "UNDECIDED"
+        elif score_cross_1d > score_x_1d:
+            result_1d = "Cross"
+        else:
+            result_1d = "X"
+
         return {
             "score_cross" : score_cross,
             "score_x" : score_x,
@@ -328,19 +469,12 @@ class Mode_2():
             "result" : result,
             "status" : status,
             "reason" : reason,
-            "avg_time" : avg_time
+            "avg_time" : avg_time,
+            "score_cross_1d" : score_cross_1d,
+            "score_x_1d" : score_x_1d,
+            "avg_time_1d" : avg_time_1d,
+            "result_1d" : result_1d
         }
-        """ [2-1단계] Matrix 객체 생성      ──> 2D 데이터 리스트를 Matrix 클래스로 변환
-        [2-2단계] MAC 점수 연산         ──> input_mat.mac()으로 Cross, X 점수 계산
-        [2-3단계] 라벨 정규화          ──> only_normal()로 expected 라벨 정리
-        [2-4단계] 점수 비교 및 판정/리턴 ──> 크기 비교, 동점 처리(UNDECIDED), dict 반환"""
-
-        """input_mat = Matrix(n_size, input_data)
-            cross_mat = Matrix(n_size, cross_data)
-            x_mat     = Matrix(n_size, x_data)"""
-
-# 핵심 동작 흐름
-
 
     def mode2_flow(self) -> None:
         print(f"\n -------[모드 2] {self.json_path} 자동 일괄 분석 ---------------")
@@ -428,6 +562,40 @@ class Mode_2():
         print("[수치 정밀도 검증] IEEE 754 부동소수점 오차 및 Epsilon 처리 시연")
         print("=" * 60)
 
+        print("\n#---------------------------------------")
+        print("# [5] 최적화 전/후 성능 분석 비교 (2D vs 1D)")
+        print("#---------------------------------------")
+        print(f"{'패턴 키':<12}{'2D 시간(ms)':<15}{'1D 시간(ms)':<15}{'개선율(%)':<12}{'판정 일치':<10}")
+        print("#---------------------------------------")
+
+        total_2d_time = 0.0
+        total_1d_time = 0.0
+
+        for p_key, p_value in valid_result.items():
+            t_2d = p_value['avg_time']
+            t_1d = p_value['avg_time_1d']
+
+            total_2d_time += t_2d
+            total_1d_time += t_1d
+
+            # 속도 개선율 계산
+            speedup = ((t_2d - t_1d) / t_2d * 100) if t_2d > 0 else 0.0
+            
+            # 2D 결과와 1D 최적화 결과가 서로 일치하는지 확인
+            is_match = "일치" if p_value['result'] == p_value['result_1d'] else "불일치"
+
+            print(f"{p_key:<12}{t_2d:<15.6f}{t_1d:<15.6f}{speedup:<12.2f}%{is_match:<10}")
+
+        print("#---------------------------------------")
+        if total_2d_time > 0:
+            overall_speedup = ((total_2d_time - total_1d_time) / total_2d_time) * 100
+            print(f" 기존 2D 방식 총 평균 소요시간 : {total_2d_time:.6f} ms")
+            print(f" 최적화 1D 방식 총 평균 소요시간 : {total_1d_time:.6f} ms")
+            print(f" 전체 속도 개선율             : {overall_speedup:.2f}% 단축")
+        print("=" * 60 + "\n")
+
+
+
 
 
 
@@ -437,11 +605,13 @@ class Manager:
         #__init__ 에서 인스턴스를 만들어 이전 실행결과를 기억!
         self.mode1_run = Mode_1()
         self.mode2_run = Mode_2("data.json")
+        self.generator = Made_pattern()
 
     def menu(self) -> None:
         print("1. 사용자 직접 입력 모드 (Mode1)")
         print("2. data.json 자동 일괄 분석 모드 (Mode2)")
         print("3. 프로그램 종료")
+        print("4. 패턴생성기!")
 
     def run(self) -> None:
         while True:
@@ -455,6 +625,23 @@ class Manager:
             elif choice == "3":
                 print("\n프로그램을 종료합니다. 이용해 주셔서 감사합니다!")
                 break
+            elif choice == "4":
+                n=int(input("생성할 N 크기 입력하세요!: "))
+                cross_pattern = self.generator.cross(n)
+                x_pattern = self.generator.x(n)
+                print(f"{n}x{n} Cross 패턴 생성 완료.")
+                for row in cross_pattern:
+                    print(row)
+                print(f"{n}*{n} X 패턴 생성 완료!")
+                for row in x_pattern:
+                    print(row)
+            elif choice == "5":
+                print("1D 메모리 최적화 성능 분석 비교!")
+                n= int(input("테스트할 N 크기 선택 기본(64)  : "))
+                
+
+
+
 
             else:
                 print("\n 올바른 번호를 입력해 주세요 (1, 2, 3).")
