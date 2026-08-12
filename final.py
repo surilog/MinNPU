@@ -28,12 +28,32 @@ class Matrix_1D:
         d1= self.data_1d
         d2= pattern.data_1d 
 
-        total_sum = sum(d1[i] * d2[i] for i in range(size_N))
+
+        import operator
+
+        # map과 operator.mul을 활용한 극강의 순수 파이썬 최적화
+        total_sum = sum(map(operator.mul, d1, d2))
+
+        start_time = time.perf_counter()
+        for _ in range(num_runs):
+            _ = sum(map(operator.mul, d1, d2))
+        end_time = time.perf_counter()
+        """total_sum = sum(x * y for x, y in zip(d1, d2))
+
+        start_time = time.perf_counter()
+        for _ in range(num_runs):
+            _ = sum(x * y for x, y in zip(d1, d2))
+        end_time = time.perf_counter()"""
+
+        #인덱스 접근 방식 => 매번 리스트 범위 검사로 인덱싱 오버헤드 발생!
+        #zip()은 C언어 수준에서 두 리스트의 요소를 포인터 이동으로 직접 묶어옴! ( 제너레이터 표현식)
+        #numpy없이 더 나은 성능을 원하면 map()함수 활용!(C 언어 내장 루프 실행)
+        """ total_sum = sum(d1[i] * d2[i] for i in range(size_N))
 
         start_time = time.perf_counter()
         for _ in range(num_runs):
             _ = sum(d1[i]*d2[i] for i in range(size_N))
-        end_time = time.perf_counter()
+        end_time = time.perf_counter()"""
         avg_time = ((end_time - start_time) /num_runs) * 1000.0
         return total_sum, avg_time
 """mode 1에서 입력받은 값을 가져와서 Matrix1D에서 1차원으로 바꾸고 mac_1d에서  연산 후 기존 mode1에서 출력
@@ -187,6 +207,11 @@ class Mode_1:
                     print(f"\n 오류 : {i}번째 줄의 숫자 개수({len(row)}개)가 N({n_size})과 맞지 않습니다.")
                     valied =  False
                     break # 이러한 에러 발생 시 다시 재입력 가능하게 while 문 안에 while 문을 넣은 것!
+
+                if not all(x in ("0", "1") for x in row):
+                    print(f"\n오류 : {i}번째 줄에 '0'또는 '1'이 아닌 값이 포함되어 있습니다.")
+                    valied = False
+                    break
 
                 try:
                     rows = [float(x) for x in row]
