@@ -39,4 +39,3 @@ array = [[0 for _ in range(N)]for _ in range(N)]
 print(array)
 
 
-#제너레이터 표현식
