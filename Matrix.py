@@ -53,9 +53,9 @@ class Matrix:
 
             """기존 소수점 차이 X 코드 
             total_sum = sum(              
-                                self.data[r][c] * pathern.data[r][c]
-                                for r in range(self.n)
-                                for c in range(self.n)
+                            self.data[r][c] * pathern.data[r][c]
+                            for r in range(self.n)
+                            for c in range(self.n)
             #메모리에 리스트 전체를 만들어두지 않고, 필요할 때마다 원소를 하나씩 생성(연산)하여  sum에 받는 즉시 누적하여 저장
                             )
             

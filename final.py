@@ -9,7 +9,7 @@ class Matrix_1D:
         self.n = size
         
         # 1. 전달받은 입력이 Matrix 객체인지, 일반 리스트인지 판별
-        if isinstance(data_input, Matrix): #isinstance: 객체가 특정 클래스의 인스턴스인지 확인하는 함수 맞으면 True, 아니면 False
+        if isinstance(data_input, Matrix): #isinstance: 객체가 특정 클래스의 인스턴스인지 확인하는 함수 맞으면 True, 아니면 False => 순환오류때문에 사용
             # Matrix 객체라면 그 내부의 .data (2차원 리스트)를 추출
             source_data = data_input.data
         elif isinstance(data_input, list):
@@ -17,7 +17,7 @@ class Matrix_1D:
         else:
             source_data = None
 
-        # 2. 1차원 배열(Flatten)로 변환
+        # 2. 1차원 배열로 변환
         if source_data:
             self.data_1d = [val for row in source_data for val in row]
         else:
@@ -28,32 +28,12 @@ class Matrix_1D:
         d1= self.data_1d
         d2= pattern.data_1d 
 
-
-        import operator
-
-        # map과 operator.mul을 활용한 극강의 순수 파이썬 최적화
-        total_sum = sum(map(operator.mul, d1, d2))
-
-        start_time = time.perf_counter()
-        for _ in range(num_runs):
-            _ = sum(map(operator.mul, d1, d2))
-        end_time = time.perf_counter()
-        """total_sum = sum(x * y for x, y in zip(d1, d2))
-
-        start_time = time.perf_counter()
-        for _ in range(num_runs):
-            _ = sum(x * y for x, y in zip(d1, d2))
-        end_time = time.perf_counter()"""
-
-        #인덱스 접근 방식 => 매번 리스트 범위 검사로 인덱싱 오버헤드 발생!
-        #zip()은 C언어 수준에서 두 리스트의 요소를 포인터 이동으로 직접 묶어옴! ( 제너레이터 표현식)
-        #numpy없이 더 나은 성능을 원하면 map()함수 활용!(C 언어 내장 루프 실행)
-        """ total_sum = sum(d1[i] * d2[i] for i in range(size_N))
+        total_sum = sum(d1[i] * d2[i] for i in range(size_N))
 
         start_time = time.perf_counter()
         for _ in range(num_runs):
             _ = sum(d1[i]*d2[i] for i in range(size_N))
-        end_time = time.perf_counter()"""
+        end_time = time.perf_counter()
         avg_time = ((end_time - start_time) /num_runs) * 1000.0
         return total_sum, avg_time
 """mode 1에서 입력받은 값을 가져와서 Matrix1D에서 1차원으로 바꾸고 mac_1d에서  연산 후 기존 mode1에서 출력
@@ -134,21 +114,17 @@ class Matrix:
     
 
             num_runs = 10
+            
             full_time = 0.0
             total_sum=0.0
             #제너레이터를 쓰면 0부터 더해서 초기화 필요 X
             for __ in range(num_runs):
                 start_time = time.perf_counter() # time.time()대신 사용 이유: 마이크로처 단위의 매우 높은 정밀도
                 total_sum = 0
-                total_sum = sum(              
-                                self.data[r][c] * pathern.data[r][c]
-                                for r in range(self.n)
-                                for c in range(self.n)
-                            #메모리에 리스트 전체를 만들어두지 않고, 필요할 때마다 원소를 하나씩 생성(연산)하여  sum에 받는 즉시 누적하여 저장
-                             )
-                """for r in range(self.n):
-                    for c in range(self.n):
-                        total_sum += self.data[r][c] * pathern.data[r][c]"""
+                for r in range(self.n):
+                        for c in range(self.n):
+                            total_sum += self.data[r][c] * pathern.data[r][c]
+                
 
                 end_time = time.perf_counter()
                 full_time += end_time - start_time
@@ -191,7 +167,7 @@ class Mode_1:
                     if not line:
                         break
                     lines.append(line) #1줄 입력시 바로 lines에 저장
-                except EOFError:
+                except EOFError: #input 에러 처리의 하나로 사용 가능 , ctrl D 
                     break
 
             if len(lines) != n_size : # 줄 수 검사!
@@ -206,13 +182,14 @@ class Mode_1:
                 if len(row) != n_size:
                     print(f"\n 오류 : {i}번째 줄의 숫자 개수({len(row)}개)가 N({n_size})과 맞지 않습니다.")
                     valied =  False
-                    break # 이러한 에러 발생 시 다시 재입력 가능하게 while 문 안에 while 문을 넣은 것!
-
+                    break
+                     # 이러한 에러 발생 시 다시 재입력 가능하게 while 문 안에 while 문을 넣은 것!
                 if not all(x in ("0", "1") for x in row):
-                    print(f"\n오류 : {i}번째 줄에 '0'또는 '1'이 아닌 값이 포함되어 있습니다.")
-                    valied = False
+                    print(f"\n오류 : {i}번째 줄에 '0' 또는 '1'이 아닌 값이 포함되어 있습니다." )
+                    valied =False
                     break
 
+                
                 try:
                     rows = [float(x) for x in row]
                     final_arr.append(rows)
@@ -299,8 +276,8 @@ class Mode_1:
             print("\n [3]MAC 결과")
             print("\n ---------------------------------------")
             print("\n" + "="*40)
-            print(f"필터 A(Cross)와의 Mac 점수 : {score_a}")
-            print(f"필터 B(X)와의 Mac 점수 : {score_b}")
+            print(f"필터 (Cross)와의 Mac 점수 : {score_a}")
+            print(f"필터 (X)와의 Mac 점수 : {score_b}")
             print(f"연산 시간(평균/10회): {avg_time:.6f}ms")
             print(f"판정: {win_score}")
             print("=" * 40 + "\n")
@@ -308,8 +285,8 @@ class Mode_1:
             print("\n [4] 최적화 비교")
             print("\n ---------------------------------------")
             print("\n" + "="*40)
-            print(f"최적화 필터 A(Cross)와의 Mac 점수 : {score_1a}")
-            print(f"최적화 필터 B(X)와의 Mac 점수 : {score_1b}")
+            print(f"최적화 필터 (Cross)와의 Mac 점수 : {score_1a}")
+            print(f"최적화 필터 (X)와의 Mac 점수 : {score_1b}")
             print(f"최적화 연산 시간(평균/10회): {avg_1time:.6f}ms")
             print(f"판정: {win_1score}")
             print("=" * 40 + "\n")
@@ -522,6 +499,8 @@ class Mode_2():
 
         total_count= 0
         pass_count =0
+        
+
         fail_case = []
 
         
@@ -547,6 +526,7 @@ class Mode_2():
                 pass_count+=1
             else:
                 fail_case.append((p_key,analyze_result["reason"]))
+
         print("\n#---------------------------------------")
         print("# [3] 성능 분석 (평균/10회)")
         print("#---------------------------------------")

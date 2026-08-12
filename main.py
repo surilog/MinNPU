@@ -24,7 +24,7 @@ class Manager:
             elif choice == "2":
                 self.mode2_run.mode2_flow()
             elif choice == "3":
-                print("\n프로그램을 종료합니다. 이용해 주셔서 감사합니다!")
+                print("\n프로그램을 종료합니다!")
                 break
             elif choice == "4":
                 n = int(input("생성할 N 크기 입력하세요!: "))
@@ -37,7 +37,6 @@ class Manager:
                 for row in x_pattern:
                     print(row)
                 print("\n 올바른 번호를 입력해 주세요 (1, 2, 3).")
-
 
 def only_normal(label_raw: str) -> str:
         if not label_raw:
